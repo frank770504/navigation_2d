@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   nav2d_localizer
 )
 
+add_definitions(-std=c++11)
+
 list(APPEND CMAKE_MODULE_PATH ${nav2d_karto_SOURCE_DIR}/cmake_modules)
 
 find_package(PkgConfig REQUIRED)
