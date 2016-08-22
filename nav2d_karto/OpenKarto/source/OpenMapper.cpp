@@ -34,8 +34,8 @@ namespace karto
 {
 
   // enable this for verbose debug information
-  //#define KARTO_DEBUG
-  //#define KARTO_DEBUG2
+  #define KARTO_DEBUG
+  #define KARTO_DEBUG2
 
   #define MAX_VARIANCE            500.0
   #define DISTANCE_PENALTY_GAIN   0.2
@@ -1551,11 +1551,11 @@ namespace karto
   kt_bool MapperGraph::TryCloseLoop(LocalizedLaserScan* pScan, const Identifier& rSensorName)
   {
     kt_bool loopClosed = false;
-    
+
     kt_int32u scanIndex = 0;
     
     LocalizedLaserScanList candidateChain = FindPossibleLoopClosure(pScan, rSensorName, scanIndex);
-    
+
     while (!candidateChain.IsEmpty())
     {
 #ifdef KARTO_DEBUG2
@@ -2077,13 +2077,13 @@ namespace karto
   LocalizedLaserScanList MapperGraph::FindPossibleLoopClosure(LocalizedLaserScan* pScan, const Identifier& rSensorName, kt_int32u& rStartScanIndex)
   {
     LocalizedLaserScanList chain; // return value
+    std::vector<kt_int32u> IndexVector;
     
     Pose2 pose = pScan->GetReferencePose(m_pOpenMapper->m_pUseScanBarycenter->GetValue());
     
     // possible loop closure chain should not include close scans that have a
     // path of links to the scan of interest
     const LocalizedLaserScanList nearLinkedScans = FindNearLinkedScans(pScan, m_pOpenMapper->m_pLoopSearchMaximumDistance->GetValue());
-    
     LocalizedLaserScanList scans = m_pOpenMapper->m_pMapperSensorManager->GetScans(rSensorName);
     kt_size_t nScans = scans.Size();
     for (; rStartScanIndex < nScans; rStartScanIndex++)
@@ -2098,27 +2098,31 @@ namespace karto
         // a linked scan cannot be in the chain
         if (nearLinkedScans.Contains(pCandidateScan) == true)
         {
-          chain.Clear();
+          IndexVector.clear();
         }
         else
         {
-          chain.Add(pCandidateScan);
+          IndexVector.push_back(rStartScanIndex);
         }
       }
       else
       {
         // return chain if it is long "enough"
-        if (chain.Size() >= m_pOpenMapper->m_pLoopMatchMinimumChainSize->GetValue())
+        if (IndexVector.size() >= m_pOpenMapper->m_pLoopMatchMinimumChainSize->GetValue())
         {
-          return chain;
+          break;
         }
         else
         {
-          chain.Clear();
+          IndexVector.clear();
         }
       }
     }
-    
+    for (int i = 0; i < IndexVector.size(); i++)
+    {
+      LocalizedLaserScan* pCandidateScan = scans[IndexVector[i]];
+      chain.Add(pCandidateScan);
+    }
     return chain;
   }
   
